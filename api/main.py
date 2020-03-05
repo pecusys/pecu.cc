@@ -9,9 +9,12 @@ from fastapi_contrib.serializers import openapi
 from fastapi_contrib.serializers.common import Serializer
 from pydantic import BaseModel
 import pymongo
+import requests
+import json
 
+import api.config as cf
 #-----------CONSTANTS-----------------------#
-SECRET = "test_key"
+SECRET = cf.SECRET
 
 #-----------MODELS--------------------------#
 class User(MongoDBModel):
@@ -29,12 +32,11 @@ class Entry(MongoDBTimeStampedModel):
 
 #------------DB------------------------------#
 dev_host = ('localhost', 27017)
+atlas_host = cf.ATLAS_STRING
 prod_host = 'db.pecu.cc'
 
-client = pymongo.MongoClient(dev_host[0], dev_host[1])
-db = client['pecudb']
-users = db['users']
-
+client = pymongo.MongoClient(atlas_host)
+db = None
 #------------APP-----------------------------#
 
 app = FastAPI(
@@ -44,24 +46,33 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    setup_mongodb(app)
-    await create_indexes()
+    if 'pecudb' not in client.list_database_names():
+        db = client['pecudb']
 
 #--------------AUTH-------------------------#
 
 manager = LoginManager(SECRET, tokenUrl='/auth/token')
 
 def load_user(email: str):
-    user = db.get(email)
+    user = db.users.get(email)
     return user
 
-@manager
 
 #--------------ROUTES---------------------#
 
 @app.get("/")
 def get_root():
-    return {"Test":{"Thing":"Thing2"}}
+    dbs = list()
+    if len(client.list_database_names()) == 0:
+        return {"DB status":"Not connected"}
+    else:
+        for d in client.list_database_names():
+            dbs.append(str(d))
+    return {"DB status":{"Connected!":dbs}}
+
+@app.get("/dbtest")
+def db_test():
+    return {str(client.list_database_names())}
 
 @app.post("/auth/token")
 async def login(data: OAuth2PasswordRequestForm = Depends()):
@@ -71,9 +82,25 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
     if not user or password != user['password']:
         raise InvalidCredentialsException
 
+    access_token = manager.create_access_token(data=dict(sub=email))
+    return {'access_token': access_token, 'token_type': 'bearer'}
+
 @app.get("/test")
 def get_test():
     return {"Test"}
+
+@app.get("/lastfm/{user}")
+async def get_lastfm(user: str):
+    headers = {'user-agent': user}
+    url = 'http://ws.audioscrobbler.com/2.0/'
+    payload = {
+        'api_key': cf.LASTFM_KEY,
+        'format': 'json',
+        'method': 'chart.gettopartists'
+    }
+    r = requests.get(url, headers=headers, params=payload)
+    return r.json()['artists']
+
 
 def post_test():
     return {"Test":"test"}

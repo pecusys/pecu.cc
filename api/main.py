@@ -1,7 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_login import LoginManager
-from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi_contrib.db.utils import setup_mongodb, create_indexes
 from fastapi_contrib.db.models import MongoDBModel, MongoDBTimeStampedModel
 from fastapi_contrib.common.responses import UJSONResponse
@@ -51,7 +49,6 @@ async def startup():
 
 #--------------AUTH-------------------------#
 
-manager = LoginManager(SECRET, tokenUrl='/auth/token')
 
 def load_user(email: str):
     user = db.users.get(email)
@@ -72,16 +69,6 @@ def get_root():
 @app.get("/dbtest")
 def db_test():
     return {str(client.list_database_names())}
-
-@app.post("/auth/token")
-async def login(data: OAuth2PasswordRequestForm = Depends()):
-    email = data.username
-    password = data.password
-    user = load_user(email)
-    if not user or password != user['password']:
-        raise InvalidCredentialsException
-    access_token = manager.create_access_token(data=dict(sub=email))
-    return {'access_token': access_token, 'token_type': 'bearer'}
 
 @app.get("/test")
 def get_test():
@@ -106,7 +93,7 @@ def post_test():
     return {"Test":"test"}
 
 @app.get("/dashboard")
-async def get_dashboard(user=Depends(manager)):
+async def get_dashboard():
     return {"Entries":{
         "Entry1":"1"
     }}

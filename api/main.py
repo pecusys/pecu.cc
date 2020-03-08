@@ -36,7 +36,7 @@ atlas_host = cf.ATLAS_STRING
 prod_host = 'db.pecu.cc'
 
 client = pymongo.MongoClient(atlas_host)
-db = None
+db = client.pecudb
 #------------APP-----------------------------#
 
 app = FastAPI(
@@ -47,7 +47,7 @@ app = FastAPI(
 @app.on_event('startup')
 async def startup():
     if 'pecudb' not in client.list_database_names():
-        db = client['pecudb']
+        pass
 
 #--------------AUTH-------------------------#
 
@@ -65,9 +65,8 @@ def get_root():
     dbs = list()
     if len(client.list_database_names()) == 0:
         return {"DB status":"Not connected"}
-    else:
-        for d in client.list_database_names():
-            dbs.append(str(d))
+    for d in client.list_database_names():
+        dbs.append(str(d))
     return {"DB status":{"Connected!":dbs}}
 
 @app.get("/dbtest")
@@ -81,7 +80,6 @@ async def login(data: OAuth2PasswordRequestForm = Depends()):
     user = load_user(email)
     if not user or password != user['password']:
         raise InvalidCredentialsException
-
     access_token = manager.create_access_token(data=dict(sub=email))
     return {'access_token': access_token, 'token_type': 'bearer'}
 
@@ -96,10 +94,12 @@ async def get_lastfm(user: str):
     payload = {
         'api_key': cf.LASTFM_KEY,
         'format': 'json',
-        'method': 'chart.gettopartists'
+        'method': 'user.getTopArtists',
+        'user': user,
+        'period': '1month',
     }
     r = requests.get(url, headers=headers, params=payload)
-    return r.json()['artists']
+    return r.json()
 
 
 def post_test():

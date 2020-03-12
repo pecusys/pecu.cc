@@ -5,7 +5,7 @@ from fastapi_contrib.db.models import MongoDBModel, MongoDBTimeStampedModel
 from fastapi_contrib.common.responses import UJSONResponse
 from fastapi_contrib.serializers import openapi
 from fastapi_contrib.serializers.common import Serializer
-from pydantic import BaseModel
+# from pydantic import BaseModel
 import pymongo
 import requests
 import json
@@ -16,6 +16,7 @@ SECRET = cf.SECRET
 
 #-----------MODELS--------------------------#
 class User(MongoDBModel):
+
     _id: int
     username: str
     password: str
@@ -24,17 +25,19 @@ class User(MongoDBModel):
         indexes = [pymongo.IndexModel('uid', name='_uid')]
 
 class Entry(MongoDBTimeStampedModel):
+
     class Meta:
+
         collection = "entries"
         indexes = [pymongo.IndexModel('eid', name='_eid')]
 
 #------------DB------------------------------#
-dev_host = ('localhost', 27017)
-atlas_host = cf.ATLAS_STRING
-prod_host = 'db.pecu.cc'
+DEV_HOST = ('localhost', 27017)
+ATLAS_HOST = cf.ATLAS_STRING
+DBHOST = 'db.pecu.cc'
 
-client = pymongo.MongoClient(atlas_host)
-db = client.pecudb
+CLIENT = pymongo.MongoClient(ATLAS_HOST)
+DB = CLIENT.pecudb
 #------------APP-----------------------------#
 
 app = FastAPI(
@@ -44,14 +47,14 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    if 'pecudb' not in client.list_database_names():
+    if 'pecudb' not in CLIENT.list_database_names():
         pass
 
 #--------------AUTH-------------------------#
 
 
 def load_user(email: str):
-    user = db.users.get(email)
+    user = DB.users.get(email)
     return user
 
 
@@ -60,15 +63,15 @@ def load_user(email: str):
 @app.get("/")
 def get_root():
     dbs = list()
-    if len(client.list_database_names()) == 0:
+    if len(CLIENT.list_database_names()) == 0:
         return {"DB status":"Not connected"}
-    for d in client.list_database_names():
+    for d in CLIENT.list_database_names():
         dbs.append(str(d))
     return {"DB status":{"Connected!":dbs}}
 
 @app.get("/dbtest")
 def db_test():
-    return {str(client.list_database_names())}
+    return {str(CLIENT.list_database_names())}
 
 @app.get("/test")
 def get_test():
@@ -97,3 +100,7 @@ async def get_dashboard():
     return {"Entries":{
         "Entry1":"1"
     }}
+
+@app.get("/test")
+async def get_test():
+    return 

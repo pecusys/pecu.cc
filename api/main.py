@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi_contrib.db.utils import setup_mongodb, create_indexes
 from fastapi_contrib.db.models import MongoDBModel, MongoDBTimeStampedModel
 from fastapi_contrib.common.responses import UJSONResponse
@@ -9,14 +10,18 @@ from fastapi_contrib.serializers.common import Serializer
 import pymongo
 import requests
 import json
+import numpy as np
 
 import api.config as cf
+
 #-----------CONSTANTS-----------------------#
+
 SECRET = cf.SECRET
 
 #-----------MODELS--------------------------#
-class User(MongoDBModel):
+#@TODO IMPLEMENT MONGODB COLLECTIONS TO STORE ENTRIES
 
+class User(MongoDBModel):
     _id: int
     username: str
     password: str
@@ -25,13 +30,14 @@ class User(MongoDBModel):
         indexes = [pymongo.IndexModel('uid', name='_uid')]
 
 class Entry(MongoDBTimeStampedModel):
-
     class Meta:
 
         collection = "entries"
         indexes = [pymongo.IndexModel('eid', name='_eid')]
 
 #------------DB------------------------------#
+# @TODO LINK DATABASE LOCAL TO FASTAPI INSTEAD OF MONGODB ATLAS
+
 DEV_HOST = ('localhost', 27017)
 ATLAS_HOST = cf.ATLAS_STRING
 DBHOST = 'db.pecu.cc'
@@ -39,11 +45,24 @@ DBHOST = 'db.pecu.cc'
 CLIENT = pymongo.MongoClient(ATLAS_HOST)
 DB = CLIENT.pecudb
 #------------APP-----------------------------#
-
 app = FastAPI(
     title="pecu.cc",
     default_response_class=UJSONResponse,
 )
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:3001"
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event('startup')
 async def startup():
@@ -77,6 +96,10 @@ def db_test():
 async def get_item(name: str):
     return {"name": name}
 
+@app.get('/users/{username}')
+async def get_user(username: str):
+    return {'username': username}
+
 @app.get("/lastfm/{user}")
 async def get_lastfm(user: str):
     headers = {'user-agent': user}
@@ -90,10 +113,6 @@ async def get_lastfm(user: str):
     }
     r = requests.get(url, headers=headers, params=payload)
     return r.json()
-
-
-def post_test():
-    return {"Test":"test"}
 
 @app.get("/dashboard")
 async def get_dashboard():

@@ -73,9 +73,9 @@ def get_root():
 def db_test():
     return {str(CLIENT.list_database_names())}
 
-@app.get("/test")
-def get_test():
-    return {"Test"}
+@app.get('/items/{name}')
+async def get_item(name: str):
+    return {"name": name}
 
 @app.get("/lastfm/{user}")
 async def get_lastfm(user: str):
@@ -103,4 +103,4 @@ async def get_dashboard():
 
 @app.get("/test")
 async def get_test():
-    return 
+    return

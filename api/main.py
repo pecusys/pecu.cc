@@ -109,7 +109,7 @@ async def get_lastfm(user: str):
         'format': 'json',
         'method': 'user.getTopArtists',
         'user': user,
-        'period': '1month',
+        'period': '1year',
     }
     r = requests.get(url, headers=headers, params=payload)
     return r.json()

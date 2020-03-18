@@ -29,7 +29,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    console.log(this.state.artists)
+    console.log(this.state.artists);
     fetch(API+this.state.user)
       .then(response => response.json())
       .then(data => this.setState({artists: data.topartists.artist}));
@@ -40,8 +40,8 @@ class App extends Component {
     console.log(artists)
     return (
     <div className="App">
-      <h1>Welcome!</h1>
-      <h3>To my test page!</h3>
+      <h1>API Test page</h1>
+      <h3>Last.fm api test page</h3>
       <p>Where I will test out my <code>API calls</code> locally.</p>
       <p>I'm new to all this and <i>not very good!</i> So give me some time to <b>learn!</b></p>
       <p>Currently, React fetches from a FastAPI backend which itself fetches from Last.fm.</p>
@@ -56,7 +56,7 @@ class App extends Component {
       <h3>Top artists of last month:</h3>
       <ol className='artists'>
         {artists.map(artist =>
-          <li className='artistEntry'>
+        <li className='artistEntry'>
             <p><a href={artist.url}>{artist.name}</a> -- {artist.playcount} plays</p>
           </li>
         )}

@@ -1,6 +1,7 @@
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Depends, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
 from fastapi_contrib.db.utils import setup_mongodb, create_indexes
 from fastapi_contrib.db.models import MongoDBModel, MongoDBTimeStampedModel
 from fastapi_contrib.common.responses import UJSONResponse
@@ -11,6 +12,7 @@ import pymongo
 import requests
 import json
 import numpy as np
+import datetime
 
 import api.config as cf
 
@@ -45,6 +47,7 @@ DBHOST = 'db.pecu.cc'
 CLIENT = pymongo.MongoClient(ATLAS_HOST)
 DB = CLIENT.pecudb
 #------------APP-----------------------------#
+
 app = FastAPI(
     title="pecu.cc",
     default_response_class=UJSONResponse,
@@ -88,6 +91,11 @@ def get_root():
         dbs.append(str(d))
     return {"DB status":{"Connected!":dbs}}
 
+@app.post("/login")
+async def login(*, username: str = Form(...), password: str = Form(...)):
+    return {"username":username}
+
+
 @app.get("/dbtest")
 def db_test():
     return {str(CLIENT.list_database_names())}
@@ -120,7 +128,6 @@ async def get_dashboard():
         "Entry1":"1"
     }}
 
-
-@app.get("/test")
-async def get_test():
-    return
+@app.post("/create_user/{username}")
+async def create_user(response_model=User):
+    pass

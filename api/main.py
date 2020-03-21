@@ -52,7 +52,6 @@ app = FastAPI(
     title="pecu.cc",
     default_response_class=UJSONResponse,
 )
-
 origins = [
     "http://localhost",
     "http://localhost:3000",
@@ -71,6 +70,10 @@ app.add_middleware(
 async def startup():
     if 'pecudb' not in CLIENT.list_database_names():
         pass
+
+@app.on_event('shutdown')
+async def shutdown():
+    pass
 
 #--------------AUTH-------------------------#
 
@@ -93,6 +96,7 @@ def get_root():
 
 @app.post("/login")
 async def login(*, username: str = Form(...), password: str = Form(...)):
+
     return {"username":username}
 
 

@@ -2,3 +2,4 @@ fastapi[all]
 fastapi-contrib
 motor
 pytz
+numpy

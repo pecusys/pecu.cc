@@ -2,6 +2,7 @@ from fastapi import FastAPI, APIRouter, Depends, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
+from fastapi.encoders import jsonable_encoder
 from fastapi_contrib.db.utils import setup_mongodb, create_indexes
 from fastapi_contrib.db.models import MongoDBModel, MongoDBTimeStampedModel
 from fastapi_contrib.common.responses import UJSONResponse
@@ -19,6 +20,7 @@ import api.config as cf
 #-----------CONSTANTS-----------------------#
 
 SECRET = cf.SECRET
+DATABASE_CONNECTED = False
 
 #-----------MODELS--------------------------#
 #@TODO IMPLEMENT MONGODB COLLECTIONS TO STORE ENTRIES
@@ -50,8 +52,10 @@ DB = CLIENT.pecudb
 
 app = FastAPI(
     title="pecu.cc",
+    description="Hello",
     default_response_class=UJSONResponse,
 )
+
 origins = [
     "http://localhost",
     "http://localhost:3000",
@@ -68,7 +72,7 @@ app.add_middleware(
 
 @app.on_event('startup')
 async def startup():
-    if 'pecudb' not in CLIENT.list_database_names():
+    if 'pecudb' in CLIENT.list_database_names():
         pass
 
 @app.on_event('shutdown')
@@ -87,22 +91,21 @@ def load_user(email: str):
 
 @app.get("/")
 def get_root():
-    dbs = list()
-    if len(CLIENT.list_database_names()) == 0:
-        return {"DB status":"Not connected"}
-    for d in CLIENT.list_database_names():
-        dbs.append(str(d))
-    return {"DB status":{"Connected!":dbs}}
+    return "Hello there!"
 
 @app.post("/login")
 async def login(*, username: str = Form(...), password: str = Form(...)):
-
     return {"username":username}
 
 
 @app.get("/dbtest")
 def db_test():
-    return {str(CLIENT.list_database_names())}
+    dbs = list()
+    if len(CLIENT.list_database_names()) == 0:
+        return jsonable_encoder({"dbstatus":dbs, "connected":"false"})
+    for d in CLIENT.list_database_names():
+        dbs.append(str(d))
+    return jsonable_encoder({"dbstatus":dbs, "connected":"true"})
 
 @app.get('/items/{name}')
 async def get_item(name: str):
@@ -124,6 +127,7 @@ async def get_lastfm(user: str):
         'period': '1year',
     }
     r = requests.get(url, headers=headers, params=payload)
+
     return r.json()
 
 @app.get("/dashboard")

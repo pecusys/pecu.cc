@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 
 const API = "http://localhost:8001/lastfm/"
+const DBTEST = "http://localhost:8001/dbtest/"
 
 class App extends Component {
   constructor(props) {
@@ -11,6 +12,7 @@ class App extends Component {
     this.state = {
       user: 'ooohm',
       artists: [],
+      dbtest: [],
     };
 
     this.handleChange = this.handleChange.bind(this)
@@ -33,6 +35,9 @@ class App extends Component {
     fetch(API+this.state.user)
       .then(response => response.json())
       .then(data => this.setState({artists: data.topartists.artist}));
+    fetch(DBTEST)
+      .then(response => response.json())
+      .then(data => this.setState(data.dbtest));
   }
 
   render() {
@@ -45,6 +50,8 @@ class App extends Component {
       <p>Where I will test out my <code>API calls</code> locally.</p>
       <p>I'm new to all this and <i>not very good!</i> So give me some time to <b>learn!</b></p>
       <p>Currently, React fetches from a FastAPI backend which itself fetches from Last.fm.</p>
+      <p>DB status: </p>
+      <p>{this.state.dbtest}</p>
       <h3>Enter username:</h3>
       <form onSubmit={this.handleSubmit}>
         <label>
